@@ -1,0 +1,186 @@
+{% extends 'base.html' %}{% load static %}
+{% load sass_tags %}
+{% block page_content %}
+<div class="page-body">
+  {% include 'layout/breadcrumb.html' %}
+
+  <!-- Container-fluid starts-->
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header pb-0 b-l-primary border-3">
+            <h5>My Cart</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="order-history table-responsive wishlist">
+                <table class="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Part No.</th>
+                      <th>Prdouct Name</th>
+                      <th>Price</th>
+                      <th>Quantity</th>
+                      <th>Action</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="product-list">
+                    <!-- product row list here -->
+                    <tr>
+                      <td>&nbsp;</td>
+                      <td>
+                        <div class="product-name"><a href="#">
+                            <h6>No products on your cart</h6>
+                          </a></div>
+                      </td>
+                      <td>0.00</td>
+                      <td>
+                        <fieldset class="qty-box">
+                          <div class="input-group">
+                            <input class="touchspin text-center" type="text" value="1">
+                          </div>
+                        </fieldset>
+                      </td>
+                      <td><i data-feather="x-circle"></i></td>
+                      <td>0.00</td>
+                    </tr>
+                    <!-- end of product row list here -->
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="4">
+                        <div class="input-group">
+                          <input class="form-control me-2" type="text" placeholder="Enter coupon code"><a
+                            class="btn btn-outline-primary" href="#">Apply</a>
+                        </div>
+                      </td>
+                      <td class="total-amount">
+                        <h6 class="m-0"><span class="f-w-600">Total Price :</span></h6>
+                      </td>
+                      <td><span id="total-price">0.00 </span></td>
+                    </tr>
+                    <tr>
+                      <td class="text-end" colspan="5">
+                        <a class="btn btn-outline-primary" href="{% url 'order:create-order' %}">add more</a>
+                      </td>
+                      <td><a class="btn btn-success cart-btn-transform" href="{% url 'order:create-order-checkout' %}">Check out</a></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Container-fluid Ends-->
+</div>
+{% endblock page_content %}
+{% block page_js %}
+<!-- Plugins JS start-->
+<script src="{% static 'assets/js/sidebar-menu.js' %}"></script>
+<script src="{% static 'assets/js/custom-functions.js'%}" defer></script>
+<script src="{% static 'assets/js/touchspin/vendors.min.js'%}" defer></script>
+<script src="{% static 'assets/js/touchspin/touchspin.js' %}" defer></script>
+<script src="{% static 'assets/js/touchspin/input-groups.min.js' %}" defer></script>
+
+<script>
+
+$(window).on('load', function(){
+  loadCart()
+})
+var products = []
+
+    function loadCart(){
+      //console.log('load cart')
+      html_output = ""
+      line_total = 0.00
+      if (localStorage.getItem('cart') != undefined){
+        //get existing cart, convert the string into json objects (array of objects)
+        cart_products = JSON.parse(localStorage.getItem('cart'))
+        //console.log(cart_products)
+       total_amount = 0
+        cart_products.forEach(item=>{
+            //console.log(item)
+            line_total = item.qty * item.price
+            formatted_line_total = formatMoney(line_total)
+            prod_price = formatMoney(item.price)
+            html_output = html_output + 
+            `<tr>
+            <td>${item.code}<td>
+              <div class="product-name">
+                  <h6>${item.name}</h6>
+                </a></div>
+            </td>
+            <td>${prod_price}</td>
+            <td>
+              <fieldset class="qty-box">
+                <div class="touchspin input-group">
+                  <input class="text-center form-control" type="number" value="${item.qty}" id="input-${item.id}" oninput="updateQty(${item.id})" min="1">
+                </div>
+              </fieldset>
+            </td>
+            <td>
+              <button class="btn btn-outline-danger" onclick="removeFromCart(${item.id})">
+              <i class="fa fa-trash-o" style="color:red" ></i></td>
+              </button>
+            <td>${formatted_line_total}</td>
+          </tr>`
+          total_amount += line_total
+        })
+        
+        $('#product-list').html(html_output)
+        $('#total-price').text(formatMoney(total_amount))
+        
+      }   
+    }
+
+    function updateQty(updateId){
+      const input = document.getElementById(`input-${updateId}`)      
+      const new_qty = input.value
+      
+      if (localStorage.getItem('cart') != undefined){
+        //get existing cart, convert the string into json objects (array of objects)
+        cart_products = JSON.parse(localStorage.getItem('cart'))
+        
+        
+        prodIndex= cart_products.findIndex( item => item.id === updateId)
+        cart_products[prodIndex]['qty'] = new_qty
+        
+        //console.log(cart_products)
+        //reset cart by overriding the local storage
+        localStorage.setItem('cart', JSON.stringify(cart_products))
+
+        //refesh view        
+        loadCart()
+      }
+    }
+
+    function removeFromCart(removeId){
+      //console.log('Remove id#' + removeId)
+      if (localStorage.getItem('cart') != undefined){
+        //get existing cart, convert the string into json objects (array of objects)
+        cart_products = JSON.parse(localStorage.getItem('cart'))
+        
+        
+        indexToRemove = cart_products.findIndex( item => item.id === removeId)
+        removedProdName = cart_products[indexToRemove]
+        cart_products.splice(indexToRemove, 1)
+
+        //console.log(cart_products)
+        //reset cart by overriding the local storage
+        localStorage.setItem('cart', JSON.stringify(cart_products))
+        
+        //refesh view
+        loadCart()
+      }
+    }
+  
+  </script>
+
+  
+  <!-- Plugins JS Ends-->
+{% endblock page_js %}

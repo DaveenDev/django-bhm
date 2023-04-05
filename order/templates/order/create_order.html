@@ -1,0 +1,218 @@
+{% extends 'base.html' %}{% load static %}
+{% load sass_tags %}
+
+{% block page_title %} Create an Order {% endblock  %}
+
+{% block page_css %}
+<!-- Plugins css start-->
+<link rel="stylesheet" type="text/css" href="{% sass_src 'assets/scss/vendors/jsgrid.scss' %}">
+<style>
+  /* Hide edit and delete button of JSGrid*/
+  .jsgrid-edit-button,
+  .jsgrid-delete-button {
+    display: None;
+  }
+</style>
+<!-- Plugins css Ends-->
+{% endblock %}
+
+{% block page_content %}
+<div class="page-body">
+  {% include 'layout/breadcrumb.html' %}
+
+  <!-- Container-fluid starts-->
+  <div class="container-fluid">
+
+    <!-- Find PRODUCT CARD -->
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header pb-0 b-l-primary border-3">
+            <div class="d-flex justify-content-between pe-1">
+              
+              <div>
+                <h5>Find a product</h5><span>Select a product to order and add it to cart to select it.</span>
+              </div>
+              <div>
+               <i class="fa fa-shopping-cart fa-1x"></i> <span class="h4 mr-30" id="cart-count">Cart(0)</span>
+                <a href="{% url 'order:create-order-cart' %}" class="btn btn-secondary" id="checkout">
+                  <span class="h3" id="cart-count">Checkout</span>
+                </a>
+              </div>
+ 	          </div>
+          </div>
+          <div class="card-body">
+            <div id="products-grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Container-fluid Ends-->
+</div>
+{% endblock  %}
+
+{% block page_js %}
+<!-- Plugins JS start-->
+<script src="{% static 'assets/js/sidebar-menu.js' %}"></script>
+<script src="{% static 'assets/js/jsgrid.min.js' %}"></script>
+
+<!-- LOAD PRODUCTS DATA to JSGRID TABLE DATA -->
+<script type="text/javascript">
+
+window.categories = {{ categories|safe }}
+//console.log(categories)
+
+$("#products-grid").jsGrid({    
+    width: "100%",
+
+    filtering: true,
+    editing: false,
+    sorting: true,
+    paging: true,
+    autoload: true,
+
+    pageSize: 15,
+    pageButtonCount: 5,
+
+    deleteConfirm: "Do you really want to delete the product?",
+
+    controller: {
+          loadData: function (filter) {
+              var data = $.Deferred();
+              $.ajax({
+                  type: "GET",
+                  url: "/api/products",
+                  contentType: "application/json; charset=utf-8",
+                  dataType: "json"
+              }).done(function (response) {
+
+                  console.log("JS Grid table reloaded");
+                  
+                  var filtered_data = $.grep(response, function(product){
+                    //convert to lower cases so the search not case sensitive
+
+                     return (!filter.code || product.code.indexOf(filter.code) >-1 ) &&
+                            (!filter.name || product.name.toLowerCase().indexOf(filter.name.toLowerCase()) >-1 ) &&
+                            (!filter.brand_name || product.brand_name === filter.brand_name) &&
+                            (!filter.category_name || product.category_name === filter.category_name);
+                  });
+                  
+                  data.resolve(filtered_data);
+              });
+              return data.promise();
+          }
+    },
+    // { name: "Country", type: "select", items: db.countries, valueField: "Id", textField: "Name" },
+    //{ name: "Married", type: "checkbox", title: "Is Married", sorting: false },
+    fields: [
+        { name: "sku", title: "SKU", type: "text", width: 50 },
+        { name: "name", title: "Product", type: "text", width: 200 },
+        { name: "barcode", title: "Barcode.", type: "text", width: 50 },
+        { name: "unit", title: "Unit", type: "text", width: 60 },
+        { name: "retail_price", title: "Retail Price", type: "number", width: 50 },
+        { name: "category",title: "Category", type: "select", items: categories, valueField:"name", textField: "name",  width: 60 },
+        { type: "control", width: 100,
+          itemTemplate: function(value, item) {
+                var $result = jsGrid.fields.control.prototype.itemTemplate.apply(this, arguments);
+                
+                var $customButton = $("<button class='btn btn-primary'>")
+                  .text("Add to cart")
+                  .click(function(e) {
+                        selected_product = {}
+                        selected_product.id = item.id
+                        selected_product.code = item.code
+                        selected_product.name = item.name
+                        selected_product.price = item.price1
+                        selected_product.qty = 1
+                        //strProduct = '{"id":' + item.id +', "name": "' + item.name +'", "price": '+ item.price1 +', "qty": 1}'
+                        
+                        addtoCart(selected_product)                        
+                        e.stopPropagation();
+                    });
+                
+                return $result.add($customButton);
+            }
+        }
+    ]
+});
+
+</script>
+
+<script>
+var products = []
+updateCartCount()
+
+  function addtoCart(new_product){
+    
+    if (localStorage.getItem('cart') != undefined){
+      //get existing cart, convert the string into json objects (array of objects)
+      products = JSON.parse(localStorage.getItem('cart'))
+            
+      //console.log('new product')
+      //console.log(product)
+      
+      //check if product already exist in the cart
+      checkExisting=false
+   
+      products.every(item=>{
+          if (item.id == new_product.id){
+            //for an existing product item/id, update quantity rather than creating a new entry
+            console.log("existing ID: " + item.id + "=" + new_product.id +" (new productID) "  + " qty: " + item.qty)
+            item.qty = item.qty + 1
+            checkExisting=true
+            showNotification(new_product.name + " quantity has been updated.")
+            return false
+          } 
+        checkExisting=false
+        return true
+      })
+      //console.log(checkExisting)
+      if (checkExisting===false){
+          products.push(new_product)
+          showNotification(new_product.name + " added to cart.")
+      }
+      //console.log('new cart values')
+      //console.log(products)
+      localStorage.setItem('cart', JSON.stringify(products))
+    } else {
+      //console.log('new\n' + product)
+      products.push(new_product)
+      //console.log(products)
+      showNotification(new_product.name + " added to cart.")
+      localStorage.setItem('cart', JSON.stringify(products))
+    }
+
+    updateCartCount()    
+  }
+
+
+function getCartCount(){
+  cart_count =0
+  if (localStorage.getItem('cart') != undefined){
+      products_count = JSON.parse(localStorage.getItem('cart'))
+      cart_count = products_count.length
+  }
+  return cart_count
+}
+
+function updateCartCount(){
+  cart_count = getCartCount()
+  document.getElementById('cart-count').innerText="Cart("+ cart_count +")"
+}
+
+var checkoutBtn = document.getElementById('checkout')
+checkoutBtn.addEventListener("click", function(e){    
+  e.preventDefault();
+    if (getCartCount()<=0){
+      //alert('No products on your cart yet.')
+      showNotification("No product(s) on your cart yet.")
+    }else{
+      window.location = this.href
+    } 
+},false)
+
+</script>
+
+<!-- Plugins JS Ends-->
+{% endblock %}

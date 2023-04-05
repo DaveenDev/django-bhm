@@ -1,0 +1,10 @@
+{
+	"version": 3,
+	"file": "color-1.css",
+	"sources": [
+		"color-1.scss",
+		"utils/_variables.scss"
+	],
+	"names": [],
+	"mappings": "AAAA;;;;;;;;;;GAUG;CAOF,AAAD,IAAK,CAAC;EACF,eAAe,CAAA,OAAC;EAChB,iBAAiB,CAAA,QAAC,GACrB"
+}

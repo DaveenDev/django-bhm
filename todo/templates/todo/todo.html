@@ -1,0 +1,45 @@
+{% extends 'base.html' %}{% load static %}
+{% load sass_tags %}
+{% block page_css %}
+<!-- Plugins css start-->
+<link rel="stylesheet" type="text/css" href="{% sass_src 'assets/scss/vendors/datatables.scss' %}">
+
+<!-- Plugins css Ends-->
+{% endblock %}
+{% block page_content %}
+<div class="page-body">
+    {% include 'layout/breadcrumb.html' %}
+
+    <!-- Container-fluid starts-->
+    <div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-12">
+        <div class="card">
+            <div class="card-header pb-0">
+                <h5 class="mb-3">My Todo List</h5> 
+            </div>
+            <div class="card-body">
+            <div class="table-responsive">
+               <!-- to-do.html -->
+                <form method="POST" action="{% url 'todos' %}">
+                    {% csrf_token %}
+                    {{ form.title }}
+                        <span class="btn btn-danger cancel-btn" id="close-task-panel">Close</span >
+                        <button class="btn btn-success ms-3 add-new-task-btn" id="add-task" type="submit" >Add Task</button>
+                </form>
+            </div>
+            </div>
+        </div>
+        </div>
+        <!-- DOM / jQuery  Ends-->
+    
+    </div>
+    </div>
+    <!-- Container-fluid Ends-->
+</div>
+{% endblock page_content %}
+{% block page_js %}
+<!-- Plugins JS start-->
+    <script src="{% static 'assets/js/todo/todo.js' %}"></script>
+<!-- Plugins JS Ends-->
+{% endblock %}

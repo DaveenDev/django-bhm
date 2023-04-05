@@ -1,0 +1,38 @@
+/*! -----------------------------------------------------------------------------------
+
+    Template Name: zeta Admin
+    Template URI: http://admin.pixelstrap.com/zeta/theme
+    Description: This is Admin theme
+    Author: Pixelstrap
+    Author URI: https://themeforest.net/user/pixelstrap
+
+-----------------------------------------------------------------------------------
+
+ */
+
+// *** utils ***
+
+
+@import "utils/variables";
+
+:root {
+    --theme-deafult:#10539c;
+    --theme-secondary: #0da566;
+}
+
+$primary-color: #0e66c4;
+$secondary-color : #0da566;
+$gradient-primary: linear-gradient($secondary-color, $primary-color);
+$gradient-primary-direction: linear-gradient(to right, lighten($primary-color, 10%), darken($primary-color, 8%));
+$gradient-secondary-direction: linear-gradient(to right, lighten($secondary-color, 10%), darken($secondary-color, 5%));
+$all-focus-outline-color: $primary-color;
+$code-tag-color: $primary-color;
+$list-group-active-bg-color: $primary-color;
+$list-group-active-border-color: $primary-color;
+$tour-color: $primary-color;
+$main-header-right-toggle-color : $primary-color;
+$main-header-right-nav-icon-color : $primary-color;
+$light-body-bg-color: rgba($primary-color, 0.10);
+$page-body-bg-color: $light-color;
+$pre-tag-bg-color: rgba($primary-color, 0.05);
+

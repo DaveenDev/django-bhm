@@ -1,0 +1,144 @@
+{% extends 'base.html' %}{% load static %}
+{% load sass_tags %}
+{% block page_css %}
+<!-- Plugins css start-->
+<link rel="stylesheet" type="text/css" href="{% sass_src 'assets/scss/vendors/datatables.scss' %}">
+
+<!-- Plugins css Ends-->
+{% endblock %}
+{% block page_content %}
+<div class="page-body">
+  {% include 'layout/breadcrumb.html' %}
+
+  <!-- Container-fluid starts-->
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header pb-0">
+            <h5 class="mb-3">Customers</h5>
+            <div class="d-flex justify-content-between">
+                <div>
+                    <form id="filter-orders-form">
+                      {% csrf_token %}
+                      <div>
+                        <span>
+                          <label for="date-from">Select date from: 
+                          <input type="date" id="date-from" name="date-from" >
+                        </span>
+                      
+                        <span>
+                            <label for="date-to"> to: 
+                            <input type="date" id="date-to" name="date-to">
+                        </span>
+                        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+                      </div>
+                      </form>
+                  </div>
+                  <div>
+                    <button class="btn btn-primary">New Order</button>
+                  </div>
+            </div>
+            
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="display" id="ajax-datatable">
+                <thead>
+                  <tr>
+                    <th>Order No.</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>P.O No.</th>
+                    <th>TRA No.</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td class="text-right">&nbsp;</td>
+                  </tr>
+     
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- DOM / jQuery  Ends-->
+  
+    </div>
+  </div>
+  <!-- Container-fluid Ends-->
+</div>
+{% endblock page_content %}
+{% block page_js %}
+<!-- Plugins JS start-->
+
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<!--script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></!--script-->
+<script type="text/javascript">
+var mytable = $("#ajax-datatable").DataTable()
+mytable.destroy()
+
+$(window).on('load', function(){
+  mytable = $("#ajax-datatable").DataTable({
+    ajax: {
+      "url": "{% url 'ajax-get-orders' %}",
+      'type': 'get',
+      'dataSrc': 'orders'
+    },
+    retrieve: true,
+    deferRender: true,
+    destroy: true
+  });
+});
+
+
+$('#filter-orders-form').on('submit', function(e){
+  console.log('submitting form');
+  
+  var serializedData = $(this).serialize();
+
+  $.ajax({
+      type: "POST",
+      url: "{% url 'ajax-get-filtered-orders' %}",
+      dataType: 'json',
+      data: serializedData,
+      success: function(data) {
+        /*
+        records = Object.entries(data)[0][1];
+        console.log(records);
+        var html = '';
+        records.forEach((record, index)=>{          
+            html += "<tr>";
+            html += "<td>" + record[0] + "</td>";
+            html += "<td>" + record[1] + "</td>";
+            html += "<td>" + record[2] + "</td>";
+            html += "<td>" + record[3] + "</td>";
+            html += "<td>" + record[4] + "</td>";
+            html += "<td>" + record[5] + "</td>";
+            html += "</tr>"            
+        });        
+        $('.tbody').html(html); */    
+        $('#ajax-datatable').DataTable().ajax.reload(function(){
+          console.log('datatable reloaded')
+          mytable.draw()
+        });
+               
+      },
+      error: function(errormessage){
+        console.log(errormessage.responseText);
+      }
+  });
+
+  e.preventDefault()
+});
+</script>
+<!-- Plugins JS Ends-->
+{% endblock %}

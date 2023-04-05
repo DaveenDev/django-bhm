@@ -1,0 +1,284 @@
+{% extends 'base.html' %}{% load static %}
+{% load crispy_forms_tags %}
+{% load sass_tags %}
+
+{% block page_cs %}
+  #customer-select .tt-menu {
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: red;
+  }
+{% endblock  %}
+
+{% block page_content %}
+<div class="page-body checkout">
+  {% include 'layout/breadcrumb.html' %}
+
+  <!-- Container-fluid starts-->
+  <div class="container-fluid">
+    
+    <div class="card">
+      <div class="card-header pb-0 b-l-primary border-3">
+        <h5>Finalize Order <span id="order-no"></span></h5>
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="row">
+          <div class="col-xl-6 col-sm-12">
+            
+              <div class="mb-3">
+                <label for="inputState">Select a customer</label>
+                <div id="customer-select">
+                    <div>
+                      <input class="typeahead form-control" type="text" placeholder="Choose a customer" id="typeahead-customer" >
+                    </div>
+                </div>                
+              </div>
+              <div class="mb-3">
+                <hr>
+                Or input a new customer
+              </div>
+              <div class="mb-3">
+               
+                  {% csrf_token %}
+          
+                  <input type="hidden" id="customer-id" name="customer_id">                                 
+                  
+		            {{ customer_form.customer_name|as_crispy_field }}
+                {{ customer_form.customer_name.errors }}
+                
+                {{ customer_form.address1|as_crispy_field }}  
+                
+                {{ customer_form.address2|as_crispy_field }}  
+                
+                <div class="row">
+                  <div class="mb-3 col-sm-4">
+                    {{ customer_form.province|as_crispy_field }} 
+                    
+                </div>
+                <div class="mb-3 col-sm-4">
+                  {{ customer_form.city|as_crispy_field }} 
+                </div>
+                <div class="mb-3 col-sm-2">
+                  {{ customer_form.zipcode|as_crispy_field }} 
+                </div>
+                </div>
+                <div class="row">
+                  <div class="mb-3 col-sm-6">
+                    {{ customer_form.contact_email|as_crispy_field }} 
+                  </div>
+                  <div class="mb-3 col-sm-6">
+                    {{ customer_form.contact_no|as_crispy_field }} 
+                  </div>     
+                </div>
+                
+                  {% if customer_form.non_field_errors %}
+                    <div class="alert alert-warning">
+                    {% for error in customer_form.non_field_errors %}
+                        {{ error|escape }}
+                    {% endfor %}
+                    </div>
+                  {% endif %}
+                
+            
+              </div>
+            </div> <!-- end of Column 1 -->
+            <div class="col-xl-6 col-sm-12">
+            <div class="checkout-details">
+              <div class="order-box">
+                <div class="title-box">
+                  <div class="checkbox-title">
+                    <h4 class="mb-0">Product </h4><span>Total</span>
+                  </div>
+                </div>
+                <ul class="qty" id="product-list">
+
+                  <!-- List items generated from cart here-->
+                </ul>
+                <ul class="sub-total">
+                  <li>Subtotal <span class="count" id="sub-total">0.00</span></li>
+                </ul>
+                <ul class="sub-total total">
+                  <li>Discount <span class="count" id="discount">0.00</span></li>
+                  <li>Total <span class="count" id="total-amount">0.00</span></li>
+                </ul>
+                <div class="row">
+                  <div class="col-sm-12">
+                        {{ order_form.order_amount.as_hidden }}
+                        {{ order_form.order_date|as_crispy_field }}
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-sm-12">
+                    {{ order_form.po_no|as_crispy_field }}
+                  </div>
+                </div>
+                <div class="order-place">
+                  <button type="Submit" class="btn btn-primary">Place Order</button>
+                </div>
+                
+                  {% if order_form.errors %}
+                    <div class="alert alert-warning">
+                    {% for field in order_form %}
+
+                        {% for error in field.errors %}
+                              {{field.label}}: {{ error|escape }}
+                        {% endfor %}
+
+                    {% endfor %}
+                    </div>
+                  {% endif %}
+
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+        </form>
+      </div> <!-- end of card body -->
+    </div>
+ 
+  </div>
+  <!-- Container-fluid Ends-->
+
+</div>
+{% endblock page_content %}
+{% block page_js %}
+<!-- Plugins JS start-->
+<script src="{% static 'assets/js/sidebar-menu.js' %}"></script>
+<script src="{% static 'assets/js/typeahead/handlebars.js' %}"></script>
+<script src="{% static 'assets/js/typeahead/typeahead.bundle.js' %}"></script>
+<script src="{% static 'assets/js/custom-functions.js'%}" defer></script>
+
+<!-- load cart from localStorage -->
+<script>
+
+  $(window).on('load', function(){
+    loadCartSummary()
+  })
+  var products = []
+  
+  function loadCartSummary(){
+        //console.log('load cart')
+        html_output = ""
+        line_total = 0.00
+        if (localStorage.getItem('cart') != undefined){
+          //get existing cart, convert the string into json objects (array of objects)
+          cart_products = JSON.parse(localStorage.getItem('cart'))
+          //console.log(cart_products)
+         total_amount = 0
+         ul = document.getElementById('product-list')
+          cart_products.forEach(item=>{
+              new_li = document.createElement('li')
+              line_total = item.qty * item.price
+              formatted_line_total = formatMoney(line_total)
+              new_li.innerHTML =item.name + " x " + item.qty + " <span>" + formatted_line_total + "</span>"
+              ul.appendChild(new_li)
+              line_total = item.qty * item.price
+              total_amount += line_total
+          })
+          $('#sub-total').text(formatMoney(total_amount))
+          $('#total-amount').text(formatMoney(total_amount))
+          today = getDate()
+          //console.log(today)
+          $('#id_order_form-order_date').val(today)
+          $('#id_order_form-order_amount').val(total_amount.toFixed(2))
+          
+          document.cookie = "cart=" + JSON.stringify(cart_products)
+      
+        }
+      
+  }
+
+  function getDate() {
+    let mydate = new Date();
+    let day = mydate.getDate()
+    let month = ["01", "02", "03", "04", "05", "06",
+    "07", "08", "09", "10", "11", "12"
+      ][mydate.getMonth()];
+    return mydate.getFullYear()  + '-' + month + '-' + day;
+  }
+</script>  
+
+<!-- script for Typeahead Search customer-->
+<script type="text/javascript">
+
+  var customers_list = new Bloodhound({
+    datumTokenizer: Bloodhound.tokenizers.obj.whitespace("customer_name"),
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    prefetch:
+      "{% url 'API:api-customers' %}",
+    remote: {
+      url: "{% url 'API:api-customers' %}"
+    },
+  });
+  console.log(customers_list)
+  $("#customer-select .typeahead").typeahead(null, {
+    name: "customers",
+    display: "customer_name",
+    source: customers_list,
+    limit: 10,
+  });
+
+  $('#customer-select').on('typeahead:select', function (e, datum) {
+    //console.log(datum);
+    $('#customer-id').val(datum.id)
+    $('#id_customer_form-customer_name').val(datum.customer_name)
+    $('#id_customer_form-address1').val(datum.address1)
+    $('#id_customer_form-address2').val(datum.address2)
+    $('#id_customer_form-city').val(datum.city)
+    $('#id_customer_form-province').val(datum.province)
+    $('#id_customer_form-zipcode').val(datum.zipcode)
+    $('#id_customer_form-contact_email').val(datum.contact_email)
+    $('#id_customer_form-contact_no').val(datum.contact_no)
+  });
+
+  $('#typeahead-customer').on('blur', function (e, datum) {
+    //empty selected customer when the search customer input is empty
+    if($('#typeahead-customer').val() ==''){
+      $('#customer_id').val('')
+      $('#id_customer_form-customer_name').val('')
+      $('#id_customer_form-address1').val('')
+      $('#id_customer_form-address2').val('')
+      $('#id_customer_form-ciy').val('')
+      $('#id_customer_form-province').val('')
+      $('#id_customer_form-zipcode').val('')
+      $('#id_customer_form-contact_email').val('')
+      $('#id_customer_form-contact_no').val('')
+      $("#place-order").focus();
+    }
+  });
+
+</script>
+
+<script type="text/javascript">
+  $('form-submit').on('submit', function(e){
+    console.log('form submitted')
+  })
+
+  function submitForm(){
+    $('#order-form').submit()
+    console.log('form submitted button click')
+  }
+
+  $('#id_customer_form-province').on('change', function(){
+    let province_code = this.value;
+    let city_dropdown = $('#id_customer_form-city')
+    $.ajax({
+      type: "GET",
+      url: `https://psgc.gitlab.io/api/provinces/${province_code}/cities-municipalities/`,
+      contentType: "application/json",
+      dataType: "json",
+      success: function(cities){
+        //console.log(cities)
+        city_dropdown.empty()
+        cities.forEach(function(city){
+          //console.log(city)
+          city_dropdown.append(new Option(city.name, city.code))
+        });
+      }
+    });
+  })
+</script>
+<!-- Plugins JS Ends-->
+{% endblock page_js %}

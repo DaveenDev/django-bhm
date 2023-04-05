@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+{% load my_filter %}
+{% block page_css %}
+<!-- Plugins css start-->
+<!--link rel="stylesheet" type="text/css" href="{% sass_src 'assets/scss/vendors/datatables.scss' %}"-->
+
+<link href="{% static 'assets/dataTables/datatables.min.css' %}" rel="stylesheet"/>
+
+<!-- Plugins css Ends-->
+{% endblock %}
+{% block page_content %}
+<div class="page-body">
+  {% include 'layout/breadcrumb.html' %}
+
+  <!-- Container-fluid starts-->
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header pb-0">
+            <div class="d-flex justify-content-between">
+                <div>
+                  &nbsp;    
+                </div>
+                <div>
+                  <button class="btn btn-primary">New Product</button>
+                  <button class="btn btn-primary">Import from csv</button>
+                </div>
+            </div>
+            
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="display" id="ajax-datatable">
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Product</th>
+                    <th>Unit</th>
+                    <th>Retail Price</th>
+                    <th>Purchased Price</th>
+                    <th>Category</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td class="text-right">&nbsp;</td>
+                  </tr>
+     
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- DOM / jQuery  Ends-->
+  
+    </div>
+  </div>
+  <!-- Container-fluid Ends-->
+
+</div>
+
+
+{% endblock page_content %}
+{% block page_js %}
+<!-- Plugins JS start-->
+
+<!--script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></!--script-->
+<script src="{% static 'assets/datatables/datatables.min.js' %}"></script>
+<script type="text/javascript">
+
+  var mytable = $("#ajax-datatable").DataTable();
+  mytable.destroy();
+  
+  $(window).on('load', function(){
+    //initialize datatable with date range filtering
+  
+      // Custom range filtering function
+      /*$.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+          var date_From = $('#date-from').val();
+          var date_To =$('#date-to').val();
+          var date = data[1] // use data for the date column
+          
+          if (
+              (date_From <= date) ||
+              (date_From <= date && date <= date_To)
+          ) {
+              return true;
+          }
+   
+          return false;
+      });
+      */
+      $.extend(true, $.fn.dataTable.defaults, {
+        "language": {
+          "processing": "<span class='fa-stack fa-lg'>\n\
+                          <i class='fa fa-spiner fa-spin fa-stack-2x fa-fw'></i>\n\
+          </span>&emsp;Processing..."
+        }
+      })
+      
+      mytable = $("#ajax-datatable").DataTable({
+        ajax: {
+          url: "{% url 'inventory:ajax-product-list' %}",
+          type: "get",
+          dataSrc: "results",
+          datatype: "json"
+        },
+        serverSide: true,
+        processing: true,
+        retrieve: true,
+        deferRender: true,
+        destroy: true,
+        columns: [          
+          { data: 'sku', name: "sku", width: "10%",
+            fnCreatedCell: function(nTd, sData, oData, iRow, iCol) {
+              $(nTd).html("<a href='/products/" + oData.id + "'>" + oData.sku + "</a>");
+            }
+          },
+          { data: 'name' },
+          { data: 'unit', width: "8%" },
+          { data: 'retail_price', width: "10%" },
+          { data: 'purchased_price', width: "10%" },
+          { data: 'category', width: "10%" }
+        ],
+        buttons: [
+        'copy', 'excel', 'pdf'
+        ]
+      });
+  
+     // Changes to the inputs will trigger a redraw to update the table
+      mytable.draw();  
+  
+    $('#filter-btn').on('click', function(){
+      mytable.draw();
+    });
+  });
+
+</script>
+
+<!-- Plugins JS Ends-->
+{% endblock %}
