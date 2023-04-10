@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from main.models import Customer
-from inventory.models import Product, Category, Unit
+from inventory.models import Product, Category, Unit,Inventory
 from order.models import Order
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -8,6 +8,28 @@ class ProductSerializer(serializers.ModelSerializer):
   
   class Meta:
       model = Product
+      fields = "__all__"
+
+class ProductInventorySerializer(serializers.ModelSerializer):
+   sku = serializers.CharField(read_only=True, source="product.sku")
+   name = serializers.CharField(read_only=True, source="product.name")
+   location = serializers.CharField(read_only=True, source="location.name")
+   category = serializers.CharField(read_only=True, source="product.category.name")   
+   barcode = serializers.CharField(read_only=True, source="product.barcode")
+   unit =serializers.CharField(read_only=True, source="product.unit")
+   retail_price = serializers.FloatField(source="product.retail_price")
+   purchased_price = serializers.FloatField(source="product.purchased_price")
+   image = serializers.ImageField(source="product.image")
+   tax = serializers.IntegerField(source="product.tax")
+   brand = serializers.CharField(source="product.brand")
+   is_active= serializers.BooleanField(source="product.is_active")
+   created_on =serializers.DateTimeField(source="product.created_on")
+   updated_on =serializers.DateTimeField(source="product.updated_on")
+   supplier = serializers.IntegerField(source="product.supplier_id")
+   user = serializers.IntegerField(source="product.user_id")
+   
+   class Meta:
+      model = Inventory
       fields = "__all__"
 
 class UnitSerializer(serializers.ModelSerializer):    

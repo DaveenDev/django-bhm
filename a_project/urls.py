@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 from todo import views as todo_views
 from django.conf import settings
+from django.conf.urls.static import static
 
 app_name = "api"
 
@@ -26,9 +27,9 @@ urlpatterns = [
     path('products/', include('inventory.urls')),
     path('admin/', admin.site.urls),        
     path('todos/', todo_views.todos, name='todos'),
-    path('api/', include('api.urls','API')),   
+    path('api/', include('api.urls')),   
     path('debug/', include('debug_toolbar.urls')), 
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 """if settings.DEBUG:
     import debug_toolbar

@@ -7,7 +7,15 @@
 <!--link rel="stylesheet" type="text/css" href="{% sass_src 'assets/scss/vendors/datatables.scss' %}"-->
 
 <link href="{% static 'assets/dataTables/datatables.min.css' %}" rel="stylesheet"/>
-
+<style>
+  div.dataTables_wrapper div.dataTables_filter {
+    text-align: left !important;
+}
+body.dark-only .page-wrapper .page-body-wrapper .page-body .card:not(.email-body) 
+.dataTables_wrapper .dataTables_filter input[type="search"] {
+  width: 100%
+}
+</style>
 <!-- Plugins css Ends-->
 {% endblock %}
 {% block page_content %}
@@ -22,7 +30,11 @@
           <div class="card-header pb-0">
             <div class="d-flex justify-content-between">
                 <div>
-                  &nbsp;    
+                  Inventory Location
+                  <select>
+                    <option>Default</option>
+                    <option>Supplier Warehouse</option>
+                  </select>
                 </div>
                 <div>
                   <button class="btn btn-primary">New Product</button>
@@ -36,23 +48,18 @@
               <table class="display" id="ajax-datatable">
                 <thead>
                   <tr>
+                    <th>Image</th>
                     <th>SKU</th>
-                    <th>Product</th>
+                    <th>Product</th>                    
                     <th>Unit</th>
                     <th>Retail Price</th>
                     <th>Purchased Price</th>
                     <th>Category</th>
+                    <th>Stock Level</th>
+                    <th>&nbsp;</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
-                    <td class="text-right">&nbsp;</td>
-                  </tr>
+                
      
                 </tfoot>
               </table>
@@ -108,42 +115,68 @@
       })
       
       mytable = $("#ajax-datatable").DataTable({
-        ajax: {
-          url: "{% url 'inventory:ajax-product-list' %}",
+        /*ajax: {
+          url: "/api/products/?format=datatables",
           type: "get",
           dataSrc: "results",
           datatype: "json"
-        },
+        },*/
+        //ajax: "http://127.0.0.1:8000/api/inventory/default/?format=datatables",
+        ajax: "{% url 'api:api-inventory' 'default' %}?format=datatables",
+        dom: '<"container-fluid"<"row"<"col d-flex justify-content-between"fl>>>rtipB',
         serverSide: true,
         processing: true,
+        filtering: true,
         retrieve: true,
         deferRender: true,
         destroy: true,
-        columns: [          
-          { data: 'sku', name: "sku", width: "10%",
-            fnCreatedCell: function(nTd, sData, oData, iRow, iCol) {
-              $(nTd).html("<a href='/products/" + oData.id + "'>" + oData.sku + "</a>");
+        select: true,
+        columns: [       
+          { data: "id",  width: "5%", 
+            render: function(id, type, row) {
+              return '<img src="' + row.image + '" height=50 width=50/>'              
+              
             }
           },
-          { data: 'name' },
-          { data: 'unit', width: "8%" },
-          { data: 'retail_price', width: "10%" },
-          { data: 'purchased_price', width: "10%" },
-          { data: 'category', width: "10%" }
+          { data: 'sku', name: "sku", width: "10%",
+              render: function(sku, type, row){
+                return '<a href="' + row.id + '">' + sku + '</a>'
+              }
+          },
+          { data: 'name' },          
+          { data: 'unit', width: "8%", searchable: false },
+          { data: 'retail_price', width: "5%", searchable: false, className: 'dt-body-right' },
+          { data: 'purchased_price', width: "5%", searchable: false, className: 'dt-body-right' },
+          { data: 'category', width: "10%", searchable: false},
+          { data: 'stock_level', width: "5%", searchable: false },
+          { data: 'id', width: "12%",
+              render: function(id, type, row){
+                return "<button class='btn btn-secondary btn-sm' onclick='updateQty("+ id +")'><update quantity>Update Qty</button>"
+              }
+          }
         ],
         buttons: [
-        'copy', 'excel', 'pdf'
+          'copyHtml5', 
+          'excelHtml5', 
+          'pdf',
+          {
+            text: 'delete selected',
+            action: function(){
+              console.log(mytable.rows( {selected: true}))
+            }
+          }
         ]
       });
   
      // Changes to the inputs will trigger a redraw to update the table
       mytable.draw();  
   
-    $('#filter-btn').on('click', function(){
-      mytable.draw();
-    });
+
   });
 
+function updateQty(prodId){
+  alert(prodId)
+}
 </script>
 
 <!-- Plugins JS Ends-->

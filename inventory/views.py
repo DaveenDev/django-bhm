@@ -27,7 +27,7 @@ def inventory(request):
         "units" : unit_list,    
         "categories": category_list,
         "breadcrumb": {
-            "child":"Product List",
+            "child":"Inventory",
             "parent":"Products"
         }
     }

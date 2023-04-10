@@ -45,7 +45,7 @@ class Product(models.Model):
     @property
     def category_name(self):
         return self.category.name
-   
+    
 
 class InvLocation(models.Model):
     name = models.CharField(max_length=30)
@@ -57,7 +57,7 @@ class InvLocation(models.Model):
     country = models.CharField(max_length=100)
 
 class Inventory(models.Model):
-    product = models.OneToOneField(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
     stock_level = models.IntegerField()
     bin_rack = models.CharField(max_length=20,null=True,blank=True)
     location = models.ForeignKey(InvLocation, on_delete=models.CASCADE)

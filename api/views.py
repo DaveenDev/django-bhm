@@ -1,10 +1,10 @@
 from django.http import HttpResponseBadRequest, JsonResponse, HttpResponse
 from django.shortcuts import render
-from rest_framework import viewsets
-from .serializers import ProductSerializer, CustomerSerializer, CategorySerializer
+from rest_framework import viewsets, generics
+from .serializers import ProductSerializer,ProductInventorySerializer, CustomerSerializer, CategorySerializer
 from .serializers import OrderSerializer, UnitSerializer
 from main.models import Customer
-from inventory.models import Product,Category, Unit
+from inventory.models import Product,Category, Unit, Inventory
 from order.models import OrderDBView, Order
 from django.views.decorators.csrf import csrf_exempt
 
@@ -13,6 +13,17 @@ from django.views.decorators.csrf import csrf_exempt
 class ProductsViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all().select_related('category')
     serializer_class = ProductSerializer
+
+class ProductsInventoryViewSet(generics.ListAPIView):
+    serializer_class = ProductInventorySerializer
+    lookup_url_kwarg = "location"
+
+    def get_queryset(self):
+        location = self.kwargs.get(self.lookup_url_kwarg)
+        if location:
+            products = Inventory.objects.all().select_related('product')
+            queryset = products.filter(location=location)                                    
+            return queryset
 
 class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
