@@ -13,6 +13,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('customers/', views.api_customers,name='api-customers'),
     path('customers/<int:id>/', views.api_customer,name='api-customer'),
-    path('inventory/<int:location>',views.ProductsInventoryViewSet.as_view(), name='api-inventory')   
+    path('inventory/<int:location>', views.ProductsInventoryViewSet.as_view(), name='api-inventory') 
 ]
 

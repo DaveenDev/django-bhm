@@ -1,5 +1,6 @@
 import requests
 import json
+from inventory.models import InvLocation
 
 def get_provinces():
     try:
@@ -35,6 +36,13 @@ def get_units():
     # create an empty entry to allow empty selection     
     request_api = requests.get('http://127.0.0.1:8000/api/units/')
     units_list = json.loads(request_api.text)
-    units_list = [{'id': unit['id'], 'unit': unit['unit']} for unit in units_list['results']]
-    units_list.insert(0, {'id': 0, 'unit': ''})
+    units_list = [{'id': unit['id'], 'unit': unit['unit']} for unit in units_list['results']]    
     return units_list
+
+def get_locations():
+    location = InvLocation.objects.all().values('id','name')
+    return location
+
+def get_default_location_id():
+    id = InvLocation.objects.filter(name='Default')[0]
+    return id

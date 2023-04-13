@@ -2,30 +2,19 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from main import functions
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import CreateView
 from inventory.models import Product
 from api.serializers import ProductSerializer
-import json
-import requests
+from .forms import ProductForm
 
 def inventory(request):
     category_list = functions.get_categories()
     unit_list = functions.get_units()
-    product = Product.objects.all()
-    products_count = product.count()
-    products_list = list(product.values_list('id','sku','name','unit','retail_price','purchased_price','category')[:3])    
-    products_list = json.dumps(products_list)
-    print(products_list)
-
-    context = {
-        "products": products_list,
-        "data" : {
-            "products": products_list,
-            "draw": 50,
-            "recordsTotal": products_count,
-            "recordsFiltered": products_count
-        },
+    location_list = functions.get_locations()    
+    context = {        
         "units" : unit_list,    
         "categories": category_list,
+        "locations": location_list,
         "breadcrumb": {
             "child":"Inventory",
             "parent":"Products"
@@ -33,6 +22,21 @@ def inventory(request):
     }
 
     return render(request, 'inventory/inventory.html', context)
+
+class NewProductView(CreateView):
+    model = Product
+    form_class = ProductForm
+    template_name="inventory/new-product.html"
+    success_url = "new-product/success"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        context['breadcrumb']= {"child":"Add Product","parent":"Product"}
+        return context
+    
+def success_view(request):
+    return render(request, 'inventory/success.html')
 
 
 def categories(request):

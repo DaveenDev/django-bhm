@@ -1,12 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load sass_tags %}
-{% load my_filter %}
 {% block page_css %}
 <!-- Plugins css start-->
-<!--link rel="stylesheet" type="text/css" href="{% sass_src 'assets/scss/vendors/datatables.scss' %}"-->
+<link rel="stylesheet" type="text/css" href="{% sass_src 'assets/scss/vendors/datatables.scss' %}">
 
-<link href="{% static 'assets/dataTables/datatables.min.css' %}" rel="stylesheet"/>
 <style>
   div.dataTables_wrapper div.dataTables_filter {
     text-align: left !important;
@@ -14,6 +12,12 @@
 body.dark-only .page-wrapper .page-body-wrapper .page-body .card:not(.email-body) 
 .dataTables_wrapper .dataTables_filter input[type="search"] {
   width: 100%
+}
+
+select#inventory-location {
+  margin-left: 10px;
+  width: 165px;
+  border-color: #e1dede;
 }
 </style>
 <!-- Plugins css Ends-->
@@ -29,15 +33,17 @@ body.dark-only .page-wrapper .page-body-wrapper .page-body .card:not(.email-body
         <div class="card">
           <div class="card-header pb-0">
             <div class="d-flex justify-content-between">
-                <div>
+                <div class="d-flex">
                   Inventory Location
-                  <select>
-                    <option>Default</option>
+                  <select name="location" id="inventory-location">
+                    {% for location in locations %}
+                      <option value={{location.id}} {% if location.name == 'default' %} selected {% endif %} >{{ location.name }}</option>                    
+                    {% endfor %}
                     <option>Supplier Warehouse</option>
                   </select>
                 </div>
                 <div>
-                  <button class="btn btn-primary">New Product</button>
+                  <a href="{% url 'inventory:new-product' %}" class="btn btn-primary">New Product</a>
                   <button class="btn btn-primary">Import from csv</button>
                 </div>
             </div>
@@ -71,7 +77,39 @@ body.dark-only .page-wrapper .page-body-wrapper .page-body .card:not(.email-body
   
     </div>
   </div>
+  
   <!-- Container-fluid Ends-->
+
+  <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Stock Level update</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <form>
+        <div class="modal-body">
+            <input type="hidden" id="productid" name="productid">
+            <div class="form-group">
+              <label for="sku" class="col-form-label">Product:</label>
+              <input type="text" class="form-control" id="product"  name="product" readonly="readonly">
+            </div>
+            <div class="form-group">
+              <label for="quantity" class="col-form-label">Quantity:</label>
+              <input type="number" class="form-control" id="quantity" name="quantity">
+            </div>            
+          
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary" id="submit">Update</button>
+        </div>
+      </form>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -82,30 +120,16 @@ body.dark-only .page-wrapper .page-body-wrapper .page-body .card:not(.email-body
 
 <!--script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></!--script-->
 <script src="{% static 'assets/datatables/datatables.min.js' %}"></script>
+<script src="{% static 'assets/js/sidebar-menu.js' %}"></script>
+<script src="{% static 'assets/js/tooltip-init.js' %}"></script>
+
 <script type="text/javascript">
+  
 
   var mytable = $("#ajax-datatable").DataTable();
   mytable.destroy();
   
   $(window).on('load', function(){
-    //initialize datatable with date range filtering
-  
-      // Custom range filtering function
-      /*$.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-          var date_From = $('#date-from').val();
-          var date_To =$('#date-to').val();
-          var date = data[1] // use data for the date column
-          
-          if (
-              (date_From <= date) ||
-              (date_From <= date && date <= date_To)
-          ) {
-              return true;
-          }
-   
-          return false;
-      });
-      */
       $.extend(true, $.fn.dataTable.defaults, {
         "language": {
           "processing": "<span class='fa-stack fa-lg'>\n\
@@ -113,16 +137,10 @@ body.dark-only .page-wrapper .page-body-wrapper .page-body .card:not(.email-body
           </span>&emsp;Processing..."
         }
       })
+      var inv_location = $('#inventory-location').val()
       
       mytable = $("#ajax-datatable").DataTable({
-        /*ajax: {
-          url: "/api/products/?format=datatables",
-          type: "get",
-          dataSrc: "results",
-          datatype: "json"
-        },*/
-        //ajax: "http://127.0.0.1:8000/api/inventory/default/?format=datatables",
-        ajax: "{% url 'api:api-inventory' 'default' %}?format=datatables",
+        ajax: `inventory/${inv_location}?format=datatables`,
         dom: '<"container-fluid"<"row"<"col d-flex justify-content-between"fl>>>rtipB',
         serverSide: true,
         processing: true,
@@ -151,7 +169,9 @@ body.dark-only .page-wrapper .page-body-wrapper .page-body .card:not(.email-body
           { data: 'stock_level', width: "5%", searchable: false },
           { data: 'id', width: "12%",
               render: function(id, type, row){
-                return "<button class='btn btn-secondary btn-sm' onclick='updateQty("+ id +")'><update quantity>Update Qty</button>"
+                return "<button class='btn btn-secondary btn-sm' type='button' data-bs-toggle='modal' data-bs-target='#exampleModal'" +
+                 " data-productid='" + id + "' data-sku='" + row.sku  + "' data-productname='" + row.name + 
+                 "' data-quantity='" + row.stock_level + "'>Update Qty</button>"
               }
           }
         ],
@@ -170,13 +190,39 @@ body.dark-only .page-wrapper .page-body-wrapper .page-body .card:not(.email-body
   
      // Changes to the inputs will trigger a redraw to update the table
       mytable.draw();  
-  
+      
+      $('#inventory-location').on('change', function(){
+        $('#ajax-datatable').DataTable()
+          .ajax.url(`inventory/${this.value}?format=datatables`)
+          .load();
+      });
 
   });
 
 function updateQty(prodId){
   alert(prodId)
 }
+
+$('#exampleModal').on('show.bs.modal', function (event) {
+  var button = $(event.relatedTarget) // Button that triggered the modal
+  var productid = button.data('productid') // Extract info from data-* attributes
+  var sku = button.data('sku')
+  var name = button.data('productname')
+  var qty = button.data('quantity')
+  
+  // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+  var modal = $(this)
+  modal.find('.modal-title').text('SKU: ' + sku)
+  modal.find('.modal-body input#product').val(name)
+  modal.find('.modal-body input#quantity').val(qty)
+})
+
+//Update stock level button event listener
+$('#submit').on('click', function(event){
+  alert('submitted')
+  event.preventDefault()
+
+})
 </script>
 
 <!-- Plugins JS Ends-->

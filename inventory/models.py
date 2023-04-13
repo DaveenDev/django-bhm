@@ -19,18 +19,24 @@ class Supplier(models.Model):
     contact_email = models.EmailField(null=True,blank=True)
     contact_phone = models.TextField(null=True,blank=True)
 
+    def __str__(self):
+        return self.name
+
 class Unit(models.Model):
     unit = models.CharField(max_length=20)
+
+    def __str__(self):
+        return self.unit
 
 class Product(models.Model):
     sku = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=150)
-    barcode = models.CharField(max_length=100,null=True)
+    barcode = models.CharField(max_length=100,null=True, blank=True)
     unit =models.CharField(max_length=20)
     retail_price = models.FloatField()
     purchased_price = models.FloatField()
     image = models.ImageField(upload_to="product-images", null=True, blank=True)
-    tax = models.IntegerField(null = True)
+    tax = models.IntegerField(null = True, blank=True)
     brand = models.CharField(max_length=50, null=True, blank=True)
     category=models.ForeignKey(Category,on_delete=models.SET_NULL, null=True, blank=True)
     is_active= models.BooleanField(default=True),
@@ -55,6 +61,9 @@ class InvLocation(models.Model):
     region = models.CharField(max_length=50)
     post_code = models.CharField(max_length=50)
     country = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
 
 class Inventory(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
