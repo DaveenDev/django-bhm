@@ -71,4 +71,7 @@ class Inventory(models.Model):
     bin_rack = models.CharField(max_length=20,null=True,blank=True)
     location = models.ForeignKey(InvLocation, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return "product:" + str(self.product) + " stock level: " + str(self.stock_level)
+
 

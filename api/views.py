@@ -1,12 +1,19 @@
 from django.http import HttpResponseBadRequest, JsonResponse, HttpResponse
-from django.shortcuts import render
-from rest_framework import viewsets, generics
-from .serializers import ProductSerializer,ProductInventorySerializer, CustomerSerializer, CategorySerializer
-from .serializers import OrderSerializer, UnitSerializer
-from main.models import Customer
-from inventory.models import Product,Category, Unit, Inventory
-from order.models import OrderDBView, Order
+from django.shortcuts import render, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
+
+from rest_framework import viewsets, generics
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.mixins import UpdateModelMixin
+from rest_framework import status
+from .serializers import ProductSerializer,ProductInventorySerializer, CustomerSerializer, CategorySerializer
+from .serializers import OrderSerializer, UnitSerializer, InventorySerializer
+from inventory.models import Product,Category, Unit, Inventory
+from order.models import Order
+from main.models import Customer
+from main.functions import debug_esc
+
 
 # Create your views here.
 
@@ -19,12 +26,43 @@ class ProductsInventoryViewSet(generics.ListAPIView):
     lookup_url_kwarg = "location"
 
     def get_queryset(self):
-        location = self.kwargs.get(self.lookup_url_kwarg)
-        if location:
+        location_id = self.kwargs.get(self.lookup_url_kwarg)
+        if location_id:
             products = Inventory.objects.all().select_related('product')
-            queryset = products.filter(location=location)                                    
-            return queryset
+            queryset = products.filter(location=location_id)                                    
+            return queryset       
 
+class UpdateInventoryViewSet(generics.UpdateAPIView,UpdateModelMixin):
+    queryset = Inventory.objects.all()
+    serializer_class = InventorySerializer
+    http_method_names = ['patch',]
+    lookup_url_kwarg  = "product_id"
+       
+    def partial_update(self, request, *args, **kwargs):
+        object = self.get_object()
+       
+        #print(debug_esc('31;1;4') + 'Request Data')
+        #print(self.request.data)
+        #print(debug_esc(0))
+        product_id = self.kwargs.get(self.lookup_url_kwarg)
+        serializer = self.serializer_class(instance=object, 
+                                           data=request.data, 
+                                           context = {
+                                                    'location_id': request.data.get('location_id'),
+                                                    'product_id': self.kwargs.get(self.lookup_url_kwarg)
+                                           },
+                                           partial=True)
+        if serializer.is_valid():           
+            inventory = Inventory.objects.get(product_id=product_id, 
+                                        location_id=request.data.get('location_id'))
+            
+            inventory.stock_level=request.data.get('stock_level')
+            inventory.bin_rack=request.data.get('bin_rack')
+            inventory.save(update_fields=['stock_level','bin_rack'])    
+            return Response(data=serializer.data, status = status.HTTP_201_CREATED)
+        else:
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer

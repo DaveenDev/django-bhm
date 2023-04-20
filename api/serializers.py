@@ -2,6 +2,7 @@ from rest_framework import serializers
 from main.models import Customer
 from inventory.models import Product, Category, Unit,Inventory
 from order.models import Order
+from main.functions import  debug_esc
 
 class ProductSerializer(serializers.ModelSerializer):
   category = serializers.CharField(read_only=True, source="category.name")
@@ -31,6 +32,27 @@ class ProductInventorySerializer(serializers.ModelSerializer):
    class Meta:
       model = Inventory
       fields = "__all__"
+
+class InventorySerializer(serializers.ModelSerializer):
+   class Meta:
+      model = Inventory
+      fields = "__all__"
+      lookup_url_kwarg = "product_id"
+
+   def update(self, instance, validated_data):
+     
+      print(debug_esc('31;1;4') + 'validated_data')
+      print(validated_data)
+      print(debug_esc(0))
+      
+      print(debug_esc('31;1;4') + ' context values')
+      print(self.context)
+      print(debug_esc(0))
+      
+      instance.stock_level = validated_data.get('stock_level',instance.stock_level)
+      instance.bin_rack = validated_data.get('bin_rack', instance.bin_rack)
+      
+      return instance
 
 class UnitSerializer(serializers.ModelSerializer):    
   class Meta:

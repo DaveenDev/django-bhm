@@ -1,9 +1,9 @@
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from main import functions
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import CreateView
-from inventory.models import Product
+from django.views.generic import CreateView, UpdateView
+from inventory.models import Product, Inventory
 from api.serializers import ProductSerializer
 from .forms import ProductForm
 
@@ -30,10 +30,34 @@ class NewProductView(CreateView):
     success_url = "new-product/success"
     
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user = self.request.user
+        context = super().get_context_data(**kwargs)        
         context['breadcrumb']= {"child":"Add Product","parent":"Product"}
         return context
+    
+    def form_valid(self, form):
+        self.object = form.save()
+        print(functions.debug_esc('31;1;4') + 'Form Data')
+        print(form.cleaned_data)
+        print(functions.debug_esc(0))
+        return HttpResponseRedirect(self.get_success_url)
+    
+class ProductDetail(UpdateView):
+    model = Product
+    form_class = ProductForm
+    template_name="inventory/product-detail.html"
+    success_url = "new-product/success"
+    fields = "__all__"
+
+    def get_queryset(self, **kwargs):
+        id = int(kwargs.pk)
+        product = Product.objects.get(pk=id)
+        return product
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['breadcrumb']= {"child":"Product detail","parent":"Product"}
+        return context
+
     
 def success_view(request):
     return render(request, 'inventory/success.html')

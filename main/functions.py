@@ -46,3 +46,6 @@ def get_locations():
 def get_default_location_id():
     id = InvLocation.objects.filter(name='Default')[0]
     return id
+
+def debug_esc(code):
+    return f'\033[{code}m'

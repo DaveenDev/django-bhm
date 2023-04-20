@@ -89,22 +89,39 @@ select#inventory-location {
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
-        <form>
+        <form id="update-inventory-form">
         <div class="modal-body">
-            <input type="hidden" id="productid" name="productid">
+            <input type="hidden" id="product_id" name="product_id">  
             <div class="form-group">
               <label for="sku" class="col-form-label">Product:</label>
               <input type="text" class="form-control" id="product"  name="product" readonly="readonly">
             </div>
+            <div class="row">
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label for="location" class="col-form-label">Inventory Location:</label>
+                  <input type="hidden" class="form-control" id="location_id" name="location_id">
+                  <input type="text" class="form-control" id="location" name="location" readonly="readonly">
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label for="binrack" class="col-form-label">Bin Rack:</label>
+                  <input type="text" class="form-control" id="binrack" name="binrack">
+                </div>           
+              </div>
+            </div> 
             <div class="form-group">
               <label for="quantity" class="col-form-label">Quantity:</label>
               <input type="number" class="form-control" id="quantity" name="quantity">
             </div>            
+            
           
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-primary" id="submit">Update</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          
         </div>
       </form>
       </div>
@@ -113,9 +130,10 @@ select#inventory-location {
 
 </div>
 
-
 {% endblock page_content %}
+
 {% block page_js %}
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"></script>
 <!-- Plugins JS start-->
 
 <!--script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></!--script-->
@@ -123,9 +141,11 @@ select#inventory-location {
 <script src="{% static 'assets/js/sidebar-menu.js' %}"></script>
 <script src="{% static 'assets/js/tooltip-init.js' %}"></script>
 
-<script type="text/javascript">
-  
 
+<script type="text/javascript">
+  //DATATABLE SCRIPT  
+  var invlocation_id = $('#inventory-location').val()
+  var invlocation_text = $('#inventory-location option:selected').text()
   var mytable = $("#ajax-datatable").DataTable();
   mytable.destroy();
   
@@ -137,10 +157,10 @@ select#inventory-location {
           </span>&emsp;Processing..."
         }
       })
-      var inv_location = $('#inventory-location').val()
+      
       
       mytable = $("#ajax-datatable").DataTable({
-        ajax: `inventory/${inv_location}?format=datatables`,
+        ajax: `inventory/${invlocation_id}?format=datatables`,
         dom: '<"container-fluid"<"row"<"col d-flex justify-content-between"fl>>>rtipB',
         serverSide: true,
         processing: true,
@@ -149,6 +169,7 @@ select#inventory-location {
         deferRender: true,
         destroy: true,
         select: true,
+        stateSave: true,
         columns: [       
           { data: "id",  width: "5%", 
             render: function(id, type, row) {
@@ -158,7 +179,7 @@ select#inventory-location {
           },
           { data: 'sku', name: "sku", width: "10%",
               render: function(sku, type, row){
-                return '<a href="' + row.id + '">' + sku + '</a>'
+                return '<a href="/products/' + row.id + '/update/">' + sku + '</a>'
               }
           },
           { data: 'name' },          
@@ -175,6 +196,9 @@ select#inventory-location {
               }
           }
         ],
+        language: {
+          "sProcessing": "<img src='{% static 'assets/images/loading.gif' %}'>"
+        },
         buttons: [
           'copyHtml5', 
           'excelHtml5', 
@@ -199,10 +223,10 @@ select#inventory-location {
 
   });
 
-function updateQty(prodId){
-  alert(prodId)
-}
+</script>
 
+<script>
+//BOOTSTRAP modal
 $('#exampleModal').on('show.bs.modal', function (event) {
   var button = $(event.relatedTarget) // Button that triggered the modal
   var productid = button.data('productid') // Extract info from data-* attributes
@@ -213,15 +237,72 @@ $('#exampleModal').on('show.bs.modal', function (event) {
   // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
   var modal = $(this)
   modal.find('.modal-title').text('SKU: ' + sku)
+  modal.find('.modal-body input#product_id').val(productid)
   modal.find('.modal-body input#product').val(name)
   modal.find('.modal-body input#quantity').val(qty)
+  modal.find('.modal-body input#location_id').val(invlocation_id)
+  modal.find('.modal-body input#location').val(invlocation_text)
 })
 
 //Update stock level button event listener
-$('#submit').on('click', function(event){
-  alert('submitted')
-  event.preventDefault()
+$('#update-inventory-form').submit(function(event){
 
+  event.preventDefault()
+  id = 0
+  form_data = $("form").serializeArray();
+  console.log(form_data)
+  
+  form_data.forEach((item, index)=>{
+    if (item.name == 'product_id'){
+      id = item.value
+    }
+    if (item.name == 'quantity'){
+      qty = item.value
+    }
+    if (item.name == 'binrack'){
+      binrack = item.value
+    }
+  })
+  
+  current_location = $('#inventory-location').val()
+  sendData = {
+    "product_id": id,
+    "stock_level": qty,
+    "location_id": current_location,
+    "bin_rack": binrack
+  }
+
+  $.ajax({
+    type: "PATCH",
+    url: '/api/products/update-inventory/' + id + '/',
+    dataType: "json",
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': Cookies.get("csrftoken")
+    },
+    data: JSON.stringify(sendData),
+    beforeSend: function(data){
+      $('#submit').prop('disabled', true);
+    },
+    success: function(data){
+      console.log("success update")
+      console.log(data)
+      $('#ajax-datatable').DataTable()
+          .ajax.url(`inventory/${current_location}?format=datatables`)
+          .load();
+      
+      $('#exampleModal').modal('hide');
+    },
+    error: function(rs, e){
+      $('#error').html(rs.responseText)
+      $('#error').css('display','block')
+      console.error(rs)
+    },
+    complete: function(){
+      $('#submit').prop('disabled', false)
+    }
+  });
+  
 })
 </script>
 
