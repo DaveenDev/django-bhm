@@ -18,7 +18,7 @@ from main.functions import debug_esc
 # Create your views here.
 
 class ProductsViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all().select_related('category')
+    queryset =Product.objects.all().select_related('category')
     serializer_class = ProductSerializer
 
 class ProductsInventoryViewSet(generics.ListAPIView):
@@ -36,29 +36,28 @@ class UpdateInventoryViewSet(generics.UpdateAPIView,UpdateModelMixin):
     queryset = Inventory.objects.all()
     serializer_class = InventorySerializer
     http_method_names = ['patch',]
-    lookup_url_kwarg  = "product_id"
+    lookup_field  = "pk"
        
     def partial_update(self, request, *args, **kwargs):
-        object = self.get_object()
-       
-        #print(debug_esc('31;1;4') + 'Request Data')
-        #print(self.request.data)
-        #print(debug_esc(0))
-        product_id = self.kwargs.get(self.lookup_url_kwarg)
+        object = self.get_object()       
+        #product_id = self.kwargs.get(self.lookup_url_kwarg)
+        #serializer = self.serializer_class(instance=object, 
+                                           #data=request.data, 
+                                           #context = {
+                                                    #'location_id': request.data.get('location_id'),
+                                                    #'product_id': self.kwargs.get(self.lookup_url_kwarg)
+                                           #},
+                                           #partial=True)
         serializer = self.serializer_class(instance=object, 
                                            data=request.data, 
-                                           context = {
-                                                    'location_id': request.data.get('location_id'),
-                                                    'product_id': self.kwargs.get(self.lookup_url_kwarg)
-                                           },
                                            partial=True)
         if serializer.is_valid():           
-            inventory = Inventory.objects.get(product_id=product_id, 
-                                        location_id=request.data.get('location_id'))
-            
-            inventory.stock_level=request.data.get('stock_level')
-            inventory.bin_rack=request.data.get('bin_rack')
-            inventory.save(update_fields=['stock_level','bin_rack'])    
+            serializer.save()
+            #inventory = Inventory.objects.get(id=product_id, 
+            #                            location_id=request.data.get('location_id'))
+            #inventory.stock_level=request.data.get('stock_level')
+            #inventory.bin_rack=request.data.get('bin_rack')
+            #inventory.save(update_fields=['stock_level','bin_rack'])    
             return Response(data=serializer.data, status = status.HTTP_201_CREATED)
         else:
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)

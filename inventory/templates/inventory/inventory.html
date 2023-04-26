@@ -37,9 +37,8 @@ select#inventory-location {
                   Inventory Location
                   <select name="location" id="inventory-location">
                     {% for location in locations %}
-                      <option value={{location.id}} {% if location.name == 'default' %} selected {% endif %} >{{ location.name }}</option>                    
-                    {% endfor %}
-                    <option>Supplier Warehouse</option>
+                      <option value={{location.id}} {% if location.name == 'Default' %} selected {% endif %} >{{ location.name }}</option>                    
+                    {% endfor %}                    
                   </select>
                 </div>
                 <div>
@@ -146,6 +145,7 @@ select#inventory-location {
   //DATATABLE SCRIPT  
   var invlocation_id = $('#inventory-location').val()
   var invlocation_text = $('#inventory-location option:selected').text()
+
   var mytable = $("#ajax-datatable").DataTable();
   mytable.destroy();
   
@@ -153,14 +153,13 @@ select#inventory-location {
       $.extend(true, $.fn.dataTable.defaults, {
         "language": {
           "processing": "<span class='fa-stack fa-lg'>\n\
-                          <i class='fa fa-spiner fa-spin fa-stack-2x fa-fw'></i>\n\
+                          <i class='fa fa-spiner fa-spin fa-stack-1x fa-fw'></i>\n\
           </span>&emsp;Processing..."
         }
       })
       
       
-      mytable = $("#ajax-datatable").DataTable({
-        ajax: `inventory/${invlocation_id}?format=datatables`,
+      mytable = $("#ajax-datatable").DataTable({        
         dom: '<"container-fluid"<"row"<"col d-flex justify-content-between"fl>>>rtipB',
         serverSide: true,
         processing: true,
@@ -170,28 +169,29 @@ select#inventory-location {
         destroy: true,
         select: true,
         stateSave: true,
+        ajax: `inventory/${invlocation_id}?format=datatables`,
         columns: [       
-          { data: "id",  width: "5%", 
+          { data: "id", searchable: false, width: "5%", 
             render: function(id, type, row) {
               return '<img src="' + row.image + '" height=50 width=50/>'              
-              
             }
           },
-          { data: 'sku', name: "sku", width: "10%",
+          { data: 'sku', name: "product.sku", width: "10%",
               render: function(sku, type, row){
+                //console.log(row)
                 return '<a href="/products/' + row.id + '/update/">' + sku + '</a>'
               }
           },
-          { data: 'name' },          
+          { data: 'name', name: 'product.name' },          
           { data: 'unit', width: "8%", searchable: false },
           { data: 'retail_price', width: "5%", searchable: false, className: 'dt-body-right' },
           { data: 'purchased_price', width: "5%", searchable: false, className: 'dt-body-right' },
           { data: 'category', width: "10%", searchable: false},
           { data: 'stock_level', width: "5%", searchable: false },
-          { data: 'id', width: "12%",
+          { data: 'id', searchable: false, width: "12%",
               render: function(id, type, row){
                 return "<button class='btn btn-secondary btn-sm' type='button' data-bs-toggle='modal' data-bs-target='#exampleModal'" +
-                 " data-productid='" + id + "' data-sku='" + row.sku  + "' data-productname='" + row.name + 
+                 " data-productid='" + row.id + "' data-sku='" + row.sku  + "' data-productname='" + row.name + 
                  "' data-quantity='" + row.stock_level + "'>Update Qty</button>"
               }
           }
@@ -216,11 +216,12 @@ select#inventory-location {
       mytable.draw();  
       
       $('#inventory-location').on('change', function(){
-        $('#ajax-datatable').DataTable()
-          .ajax.url(`inventory/${this.value}?format=datatables`)
-          .load();
+        if (this.value != undefined) {
+          $('#ajax-datatable').DataTable()
+            .ajax.url(`inventory/${this.value}?format=datatables`)
+            .load();          
+        }
       });
-
   });
 
 </script>
@@ -242,6 +243,10 @@ $('#exampleModal').on('show.bs.modal', function (event) {
   modal.find('.modal-body input#quantity').val(qty)
   modal.find('.modal-body input#location_id').val(invlocation_id)
   modal.find('.modal-body input#location').val(invlocation_text)
+
+  setTimeout(function(){
+    $('#quantity').focus()
+  }, 1000)
 })
 
 //Update stock level button event listener
@@ -250,7 +255,6 @@ $('#update-inventory-form').submit(function(event){
   event.preventDefault()
   id = 0
   form_data = $("form").serializeArray();
-  console.log(form_data)
   
   form_data.forEach((item, index)=>{
     if (item.name == 'product_id'){
@@ -272,6 +276,7 @@ $('#update-inventory-form').submit(function(event){
     "bin_rack": binrack
   }
 
+  //Update Inventory Ajax
   $.ajax({
     type: "PATCH",
     url: '/api/products/update-inventory/' + id + '/',

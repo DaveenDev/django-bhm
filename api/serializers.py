@@ -36,8 +36,8 @@ class ProductInventorySerializer(serializers.ModelSerializer):
 class InventorySerializer(serializers.ModelSerializer):
    class Meta:
       model = Inventory
-      fields = "__all__"
-      lookup_url_kwarg = "product_id"
+      fields = "__all__" 
+      lookup_field="pk"     
 
    def update(self, instance, validated_data):
      
@@ -51,7 +51,7 @@ class InventorySerializer(serializers.ModelSerializer):
       
       instance.stock_level = validated_data.get('stock_level',instance.stock_level)
       instance.bin_rack = validated_data.get('bin_rack', instance.bin_rack)
-      
+      instance.save()
       return instance
 
 class UnitSerializer(serializers.ModelSerializer):    

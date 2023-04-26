@@ -55,12 +55,12 @@ class Product(models.Model):
 
 class InvLocation(models.Model):
     name = models.CharField(max_length=30)
-    address1 = models.CharField(max_length=150)
-    address1 = models.CharField(max_length=150)
-    city = models.CharField(max_length=50)
-    region = models.CharField(max_length=50)
-    post_code = models.CharField(max_length=50)
-    country = models.CharField(max_length=100)
+    address1 = models.CharField(max_length=150, null=True, blank=True)
+    address1 = models.CharField(max_length=150, null=True, blank=True)
+    city = models.CharField(max_length=50, null=True, blank=True)
+    region = models.CharField(max_length=50, null=True, blank=True)
+    post_code = models.CharField(max_length=50, null=True, blank=True)
+    country = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
         return self.name

@@ -40,8 +40,8 @@ def get_units():
     return units_list
 
 def get_locations():
-    location = InvLocation.objects.all().values('id','name')
-    return location
+    locations = InvLocation.objects.all().values('id','name')
+    return locations
 
 def get_default_location_id():
     id = InvLocation.objects.filter(name='Default')[0]
