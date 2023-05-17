@@ -40,24 +40,11 @@ class UpdateInventoryViewSet(generics.UpdateAPIView,UpdateModelMixin):
        
     def partial_update(self, request, *args, **kwargs):
         object = self.get_object()       
-        #product_id = self.kwargs.get(self.lookup_url_kwarg)
-        #serializer = self.serializer_class(instance=object, 
-                                           #data=request.data, 
-                                           #context = {
-                                                    #'location_id': request.data.get('location_id'),
-                                                    #'product_id': self.kwargs.get(self.lookup_url_kwarg)
-                                           #},
-                                           #partial=True)
         serializer = self.serializer_class(instance=object, 
                                            data=request.data, 
                                            partial=True)
         if serializer.is_valid():           
-            serializer.save()
-            #inventory = Inventory.objects.get(id=product_id, 
-            #                            location_id=request.data.get('location_id'))
-            #inventory.stock_level=request.data.get('stock_level')
-            #inventory.bin_rack=request.data.get('bin_rack')
-            #inventory.save(update_fields=['stock_level','bin_rack'])    
+            serializer.save()  
             return Response(data=serializer.data, status = status.HTTP_201_CREATED)
         else:
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)

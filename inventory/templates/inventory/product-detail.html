@@ -1,11 +1,14 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load sass_tags %}
+{% load crispy_forms_tags %}
+
 {% block page_css %}
 
 {% endblock page_css %}
 
 {% block page_content %}
+
 <div class="page-body">
   {% include 'layout/breadcrumb.html' %}
 
@@ -15,11 +18,81 @@
       <div class="col-sm-12">
         <div class="card">
           <div class="card-header pb-0">
-            
-            
+            <h5>View/Update product <span id="order-no"></span></h5>
           </div>
           <div class="card-body">
-          
+            <form method="POST" enctype="multipart/form-data">
+ 
+              <!-- Security token -->
+              {% csrf_token %}
+            
+              <!-- Using the formset -->
+              <div class="row">
+                <div class="col-md-8">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="row">
+                        <div class="col-md-4">
+                          {{ form.sku|as_crispy_field }}
+                        </div>
+                        <div class="col-md-8">
+                          {{ form.name|as_crispy_field }}
+                        </div>
+                      </div>
+                    </div>                   
+                    <div class="col-md-12">
+                      <div class="row">
+                        <div class="col-sm-4">
+                          {{ form.barcode|as_crispy_field }}
+                        </div>
+                        <div class="col-sm-4">
+                          {{ form.brand|as_crispy_field }}
+                        </div>
+                        <div class="col-sm-4">
+                          {{ form.unit|as_crispy_field }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="row">
+                        <div class="col-sm-6">
+                          {{ form.category|as_crispy_field }}
+                        </div>
+                        <div class="col-sm-6">
+                          {{ form.supplier|as_crispy_field }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="row">
+                        
+                        <div class="col-sm-4">
+                          {{ form.tax|as_crispy_field }}
+                        </div>
+                        <div class="col-sm-4">
+                          {{ form.purchased_price|as_crispy_field }}
+                        </div>
+                        <div class="col-sm-4">
+                          {{ form.retail_price|as_crispy_field }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="row mx-auto">
+                    <img src="" width="300px" height="300px" id="thumbnail"/>
+                  </div>
+                  
+                  <div class="row">
+                    {{ form.image|as_crispy_field }}
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-12 text-right">
+                <button type="submit" value="Submit" class="btn btn-primary"> Update</button>
+              </div>                 
+            </form>
           </div>
         </div>
       </div>
@@ -31,7 +104,29 @@
 {% endblock page_content %}
 
 {% block page_js %}
+<script>
+  
+  var img = document.getElementById('thumbnail')
+  var fileElem = document.getElementById('id_image')
+  fileElem.addEventListener("change", function(){
+    if (this.files.length){
+      for (let i=0; i < this.files.length; i++){
+        img.src = URL.createObjectURL(this.files[i])
+        img.onload = () =>{
+          URL.reoveObjectURL(img.src)
+        };
+      }
+      
+    }else{
+      img.src=""
+    }
+    
 
+  }, false)
+    
+    
+
+</script>
 {% endblock page_js %}
 
 

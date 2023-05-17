@@ -12,6 +12,7 @@ class ProductSerializer(serializers.ModelSerializer):
       fields = "__all__"
 
 class ProductInventorySerializer(serializers.ModelSerializer):
+   product_id = serializers.CharField(read_only=True, source="product.id")
    sku = serializers.CharField(read_only=True, source="product.sku")
    name = serializers.CharField(read_only=True, source="product.name")
    location = serializers.CharField(read_only=True, source="location.name")
@@ -39,18 +40,9 @@ class InventorySerializer(serializers.ModelSerializer):
       fields = "__all__" 
       lookup_field="pk"     
 
-   def update(self, instance, validated_data):
-     
-      print(debug_esc('31;1;4') + 'validated_data')
-      print(validated_data)
-      print(debug_esc(0))
-      
-      print(debug_esc('31;1;4') + ' context values')
-      print(self.context)
-      print(debug_esc(0))
-      
+   def update(self, instance, validated_data):          
       instance.stock_level = validated_data.get('stock_level',instance.stock_level)
-      instance.bin_rack = validated_data.get('bin_rack', instance.bin_rack)
+      instance.bin_rack = validated_data.get('bin_rack', instance.bin_rack)      
       instance.save()
       return instance
 

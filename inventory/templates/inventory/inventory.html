@@ -53,6 +53,7 @@ select#inventory-location {
               <table class="display" id="ajax-datatable">
                 <thead>
                   <tr>
+                    <th>ID</th>
                     <th>Image</th>
                     <th>SKU</th>
                     <th>Product</th>                    
@@ -162,6 +163,7 @@ select#inventory-location {
       mytable = $("#ajax-datatable").DataTable({        
         dom: '<"container-fluid"<"row"<"col d-flex justify-content-between"fl>>>rtipB',
         serverSide: true,
+        responsive: true,
         processing: true,
         filtering: true,
         retrieve: true,
@@ -170,16 +172,17 @@ select#inventory-location {
         select: true,
         stateSave: true,
         ajax: `inventory/${invlocation_id}?format=datatables`,
-        columns: [       
-          { data: "id", searchable: false, width: "5%", 
+        columns: [
+          { data: "product_id", name: "product.id" },       
+          { data: "image", searchable: false, width: "5%", 
             render: function(id, type, row) {
               return '<img src="' + row.image + '" height=50 width=50/>'              
             }
           },
           { data: 'sku', name: "product.sku", width: "10%",
               render: function(sku, type, row){
-                //console.log(row)
-                return '<a href="/products/' + row.id + '/update/">' + sku + '</a>'
+                console.log(row)
+                return '<a href="/products/product-detail/' + row.product_id + '/">' + sku + '</a>'
               }
           },
           { data: 'name', name: 'product.name' },          
@@ -188,12 +191,19 @@ select#inventory-location {
           { data: 'purchased_price', width: "5%", searchable: false, className: 'dt-body-right' },
           { data: 'category', width: "10%", searchable: false},
           { data: 'stock_level', width: "5%", searchable: false },
-          { data: 'id', searchable: false, width: "12%",
-              render: function(id, type, row){
+          { data: 'id', name: "id", searchable: false, width: "12%",
+              render: function(inv_id, type, row){
                 return "<button class='btn btn-secondary btn-sm' type='button' data-bs-toggle='modal' data-bs-target='#exampleModal'" +
                  " data-productid='" + row.id + "' data-sku='" + row.sku  + "' data-productname='" + row.name + 
                  "' data-quantity='" + row.stock_level + "'>Update Qty</button>"
               }
+          }
+        ],
+        columnDefs: [
+          {
+            target: 0,  //hide the product ID column
+            visible: false,
+            searchable: false
           }
         ],
         language: {

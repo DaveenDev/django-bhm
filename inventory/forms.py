@@ -14,15 +14,6 @@ class ProductForm(forms.ModelForm):
         print(unit_list)
         self.fields['unit'] = forms.ChoiceField(choices=unit_list, required=True)
     
-    def save(self, *args, **kwargs):
-        newproduct = super(ProductForm, self).save(*args, **kwargs)        
-        
-        default_loc = functions.get_default_location_id()
-        product_inv  = Inventory(product = newproduct, stock_level=0, location=default_loc)
-        product_inv.save()
-        
-        return newproduct
-    
     """def form_valid(self, form):
         newproduct = super(ProductForm, self).form_valid(form)
         default_loc = functions.get_default_location_id()

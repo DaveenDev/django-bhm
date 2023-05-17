@@ -12,7 +12,7 @@ router.register('orders',views.OrdersViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('products/update-inventory/<int:pk>/', views.UpdateInventoryViewSet.as_view(), name="update-inventory"),
+    path('products/update-inventory/<int:pk>/', views.UpdateInventoryViewSet.as_view(), name="update-inventory"),    
     path('inventory/<int:location_id>', views.ProductsInventoryViewSet.as_view(), name='api-inventory'), 
     path('customers/', views.api_customers,name='api-customers'),
     path('customers/<int:id>/', views.api_customer,name='api-customer'),
