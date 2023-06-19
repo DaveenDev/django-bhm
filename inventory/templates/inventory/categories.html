@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+{% block page_css %}
+  <link rel="stylesheet" type="text/css" href="{% sass_src 'assets/scss/vendors/jsgrid.scss' %}">
+  <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.css" />
+  <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid-theme.min.css" />
+  
+  <style>
+    .jsgrid .jsgrid-grid-body .jsgrid-cell {
+      text-align: left !important;
+    }
+
+    .jsgrid .jsgrid-header-row > .jsgrid-header-cell {      
+      text-align: left;
+  }
+  </style>
+{% endblock page_css %}
+
+{% block page_content %}
+<div class="page-body">
+  {% include 'layout/breadcrumb.html' %}
+
+  <!-- Container-fluid starts-->
+  
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header pb-0">
+            <h5>Product Categories</h5><span></span>
+           
+          </div>
+          <div class="card-body">
+            <div id="jsGrid">
+              <div class="jsgrid-filter-row">
+                <input type="text" class="jsgrid-filter" />
+                <input type="button" class="jsgrid-button jsgrid-search-button" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</div>
+{% endblock page_content %}
+
+{% block page_js %}
+
+<script src="{% static 'assets/js/sidebar-menu.js' %}"></script>
+<script src="{% static 'assets/js/jsgrid/jsgrid.min.js' %}"></script>
+<script src="{% static 'assets/js/notify/my-notify.js' %}"></script>
+
+<script type="text/javascript">
+var categories = JSON.parse('{{ category_list|safe }}');
+//console.log(categories)
+window.CSRF_TOKEN = "{{ csrf_token }}"
+
+  $(function() {
+    // Sample data
+    
+    // JSGrid initialization
+    $("#jsGrid").jsGrid({
+      width: "100%",
+      height: "auto",
+      autoload: true,
+      editing: true,
+      inserting: true,
+      sorting: true,
+      filtering: true,
+      paging: true,
+      pageSize: 10,
+      confirmDeleting: true,
+      deleteConfirm: "Are you sure you want to delete this category?",
+      loadMessage: "Please, wait...",
+      loadShading: true,
+      data: categories,
+      fields: [
+        { name: "id", title: "Category ID", type: "number", width: 0, editing: false , visible: false},
+        { name: "name", title: "Category Name",  type: "text", width: 150, filtering: true },
+        { type: "control" }
+      ],
+      controller: {
+        loadData: function(filter){
+          // Apply the filter to the data array
+          var filteredData = $.grep(categories, function(item){
+            //filter data based on category name filter input
+            return item.name.toLowerCase().indexOf(filter.name.toLowerCase()) > -1;
+          })
+          return filteredData;
+        }
+      },
+      onItemUpdating: function(args){      
+        editCategory(args)
+      },
+      onItemDeleting: function(args){      
+        deleteCategory(args)
+      },
+      onItemInserting: function(args){      
+        InsertCategory(args)
+      }
+    });
+
+  function deleteCategory(args){
+      var itemId = args.item.id;
+      //delete category on the server
+      $.ajax({
+        url: "/products/category_delete/",
+        type: "POST",
+        data: {
+          category_id: itemId,
+          csrfmiddlewaretoken: window.CSRF_TOKEN
+        }, 
+        success: function(response){
+          categories = categories.filter(function(category){
+            return category.id !== itemId;
+          })
+          
+          $("#jsGrid").jsGrid("refresh"); 
+          //console.log("Category deleted successfully");
+          showNotification("Category was deleted successfully")
+        },
+        error: function(error){
+          //console.error("Error deleting Category", error);
+          showErrorNotification(error.responseText, "Error")
+        }
+      })
+  
+    }
+
+  });
+
+  function editCategory(args) {  
+    var itemId = args.item.id;
+    var itemName = args.item.name;
+    if (itemName === ""){
+      args.cancel = true;
+      showErrorNotification("Category name can't be blank");
+      return;
+    }
+    //performs AJAX request to update the record in the database
+    $.ajax({
+      url : "/products/category_update/",
+      type: "POST",
+      data: {
+        category_id: itemId,
+        category_name: itemName,
+        csrfmiddlewaretoken: window.CSRF_TOKEN
+      },
+      success: function(response){
+        //console.log("Category updated successfully");
+        showNotification("Category updated successfully")
+        $("#jsGrid").jsGrid("refresh"); 
+      },
+      error: function(error){
+        //console.error("Error updating Category", error);
+        showErrorNotification(error.responseText, "Error")
+      }
+    });
+  }
+
+  function InsertCategory(args){
+    var newItem = args.item.name;
+    if (newItem === ""){
+      args.cancel = true;
+      showErrorNotification("Category name can't be blank");
+      return;
+    }
+    console.log("Adding category ", newItem);
+    $.ajax({
+      url: "/products/category_add/",
+      type: "POST",
+      data: {
+        category_name: newItem,
+        csrfmiddlewaretoken: window.CSRF_TOKEN
+      },
+      success: function(response){        
+        //console.log(response)
+        showNotification("New category has been added")
+        $("#jsGrid").jsGrid("refresh")
+      },
+      error: function(error){
+        //console.log("Error adding new category", error)
+        showErrorNotification(error.responseText, "Error")
+      }
+    })
+    
+  }
+
+  
+</script>
+
+{% endblock page_js %}
+
+
+
+
+
+
+
+
+
+       

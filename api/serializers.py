@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from main.models import Customer
-from inventory.models import Product, Category, Unit,Inventory
+from inventory.models import Product, Category, Unit,Inventory, InvLocation, Supplier
 from order.models import Order
 from main.functions import  debug_esc
 
@@ -78,6 +78,11 @@ class CustomerSerializer(serializers.Serializer):
 class CategorySerializer(serializers.ModelSerializer):
    class Meta:
       model = Category
+      fields = "__all__"
+
+class InvLocationSerializer(serializers.ModelSerializer):
+   class Meta:
+      model = InvLocation
       fields = "__all__"
 
 class OrderSerializer(serializers.ModelSerializer):

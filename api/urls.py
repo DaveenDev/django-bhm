@@ -7,6 +7,7 @@ router = routers.DefaultRouter()
 router.register('products', views.ProductsViewSet)
 #router.register(r'products/update/inventory', views.UpdateInventoryViewSet, basename="update-inventory")
 router.register('categories', views.CategoriesViewSet)
+router.register('locations', views.InvLocationsViewSet)
 router.register('units', views.UnitsViewSet)
 router.register('orders',views.OrdersViewSet)
 

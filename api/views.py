@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from rest_framework.mixins import UpdateModelMixin
 from rest_framework import status
 from .serializers import ProductSerializer,ProductInventorySerializer, CustomerSerializer, CategorySerializer
-from .serializers import OrderSerializer, UnitSerializer, InventorySerializer
-from inventory.models import Product,Category, Unit, Inventory
+from .serializers import OrderSerializer, UnitSerializer, InventorySerializer, InvLocationSerializer
+from inventory.models import Product,Category, Unit, Inventory, InvLocation
 from order.models import Order
 from main.models import Customer
 from main.functions import debug_esc
@@ -63,8 +63,12 @@ class UpdateInventoryViewSet(generics.UpdateAPIView,UpdateModelMixin):
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class CategoriesViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.objects.all().order_by('name')
     serializer_class = CategorySerializer
+
+class InvLocationsViewSet(viewsets.ModelViewSet):
+    queryset = InvLocation.objects.all().order_by('name')
+    serializer_class = InvLocationSerializer
 
 class UnitsViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all()

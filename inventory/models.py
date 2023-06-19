@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 # Create your models here.
     
 class Category(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
@@ -14,7 +14,7 @@ class Category(models.Model):
         verbose_name_plural = "Categories"
 
 class Supplier(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     contact_name = models.CharField(max_length=100,null=True,blank=True)
     contact_email = models.EmailField(null=True,blank=True)
     contact_phone = models.TextField(null=True,blank=True)
@@ -54,9 +54,8 @@ class Product(models.Model):
     
 
 class InvLocation(models.Model):
-    name = models.CharField(max_length=30)
-    address1 = models.CharField(max_length=150, null=True, blank=True)
-    address1 = models.CharField(max_length=150, null=True, blank=True)
+    name = models.CharField(max_length=30, unique=True)
+    address = models.CharField(max_length=150, null=True, blank=True)
     city = models.CharField(max_length=50, null=True, blank=True)
     region = models.CharField(max_length=50, null=True, blank=True)
     post_code = models.CharField(max_length=50, null=True, blank=True)

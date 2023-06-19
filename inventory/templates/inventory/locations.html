@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+{% block page_css %}
+  <link rel="stylesheet" type="text/css" href="{% sass_src 'assets/scss/vendors/jsgrid.scss' %}">
+  <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.css" />
+  <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid-theme.min.css" />
+  
+  <style>
+    .jsgrid .jsgrid-grid-body .jsgrid-cell {
+      text-align: left !important;
+    }
+
+    .jsgrid .jsgrid-header-row > .jsgrid-header-cell {      
+      text-align: left;
+  }
+  </style>
+{% endblock page_css %}
+
+{% block page_content %}
+<div class="page-body">
+  {% include 'layout/breadcrumb.html' %}
+
+  <!-- Container-fluid starts-->
+  
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header pb-0">
+            <div class="d-flex flex-row justify-content-between">
+              <h5>Inventory Locations</h5>
+              <div>
+                <button class="btn btn-primary" type="button" data-bs-toggle='modal' 
+                  data-bs-target='#locationModal' data-btn-source='add-btn'>Add New</button>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="jsGrid">
+              <div class="jsgrid-filter-row">
+                <input type="text" class="jsgrid-filter" />
+                <input type="button" class="jsgrid-button jsgrid-search-button" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="modal fade" id="locationModal" tabindex="-1" role="dialog" aria-labelledby="locationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="locationModalLabel">Location update</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <form id="update-location-form">
+        <div class="modal-body">            
+            <div class="row">
+              <div class="form-group">
+                <input id="location_id" name="location_id" type="hidden" >  
+                <label for="location_name" class="col-form-label">Location:</label>
+                <input type="text" class="form-control" id="location_name"  name="location_name">
+              </div>
+            </div>
+            <div class="row">
+              <div class="form-group">
+                <label for="address" class="col-form-label">Address</label>
+                <input type="text" class="form-control" id="address" name="address">
+              </div>   
+            </div>
+            <div class="row">
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label for="city" class="col-form-label">City:</label>              
+                  <input type="text" class="form-control" id="city" name="city">
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label for="region" class="col-form-label">Region</label>
+                  <input type="text" class="form-control" id="region" name="region">
+                </div>           
+              </div>
+            </div> 
+            <div class="row">
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label for="post_code" class="col-form-label">Post Code:</label>              
+                  <input type="text" class="form-control" id="post_code" name="post_code">
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label for="country" class="col-form-label">Country</label>
+                  <input type="text" class="form-control" id="country" name="country">
+                </div>           
+              </div>
+            </div>            
+            
+          
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" id="location-submit">Update</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          
+        </div>
+      </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock page_content %}
+
+{% block page_js %}
+
+<script src="{% static 'assets/js/sidebar-menu.js' %}"></script>
+<script src="{% static 'assets/js/jsgrid/jsgrid.min.js' %}"></script>
+<script src="{% static 'assets/js/notify/my-notify.js' %}"></script>
+
+<script type="text/javascript">
+var locations = JSON.parse('{{ locations_list|safe }}');
+//console.log(locations)
+window.CSRF_TOKEN = "{{ csrf_token }}"
+
+  $(function() {
+    // Sample data
+    
+    // JSGrid initialization
+    $("#jsGrid").jsGrid({
+      width: "100%",
+      height: "auto",
+      autoload: true,
+      editing: false,
+      inserting: false,
+      sorting: true,
+      paging: true,
+      pageSize: 10,
+      confirmDeleting: true,
+      deleteConfirm: "Are you sure you want to delete this location?",
+      loadMessage: "Please, wait...",
+      loadShading: true,
+      data: locations,
+      fields: [
+        { name: "id", title: "Location ID", type: "number", width: 0, editing: false , visible: false},
+        { name: "name", title: "Name",  type: "text", width: 100, editing: false },
+        { name: "address", title: "Address",  type: "text", width: 200 ,
+          itemTemplate: function(value,item){
+            var addressParts = [item.address, item.city, item.post_code, item.country]
+            var filteredParts = addressParts.filter(function(part){
+              return part !== undefined && part !== null && part.trim() !== "";
+            })
+            return filteredParts.join(", ");
+        }},        
+        { type: "control",
+          itemTemplate: function(value, item){
+            var $editButton = $("<button>").addClass("jsgrid-button jsgrid-edit-button")
+                                           .attr('type', 'button')
+                                           .attr('data-bs-toggle', 'modal')
+                                           .attr('data-bs-target', '#locationModal')
+                                           .attr('data-loc_name', item.name)
+                                           .attr('data-loc_address', item.address)
+                                           .attr('data-loc_id', item.id)
+                                           .attr('data-loc_city', item.city)
+                                           .attr('data-loc_region', item.region)
+                                           .attr('data-loc_post_code', item.post_code)
+                                           .attr('data-loc_country', item.country)
+                                           .attr('data-btn-source', 'edit-btn')
+                                           .on("click", function(){ 
+                                              console.log("show modal form for ")                                               
+                                              console.log(item)                                               
+                                            })
+            var $deleteButton = $("<button>").addClass("jsgrid-button jsgrid-delete-button")
+                                            .on("click", function(){
+                                              console.log("Delete button clicked!", item);
+                                              var result = confirm("Are you sure you want to delete this location?")
+                                              if (result){
+                                                deleteLocation(item);
+                                              }                                              
+                                            })
+
+            var $controls = $("<div>").append($editButton).append($deleteButton)
+            return $controls
+        }}
+      ],      
+    });
+
+  function deleteLocation(item){
+      
+      var itemId = item.id;
+      //delete location on the server
+      $.ajax({
+        url: "/products/location_delete/",
+        type: "POST",
+        data: {
+          location_id: itemId,
+          csrfmiddlewaretoken: window.CSRF_TOKEN
+        }, 
+        success: function(response){
+          locations = locations.filter(function(location){
+            return location.id !== itemId;
+          })
+          
+          $("#jsGrid").jsGrid("refresh"); 
+          //console.log("location deleted successfully");
+          showNotification("Location was deleted successfully")
+          location.reload()
+        },
+        error: function(error){
+          //console.error("Error deleting location", error);
+          showErrorNotification(error.responseText, "Error")
+        }
+      })
+  
+    }
+
+  });  
+
+</script>
+
+<script type="text/javascript">
+// MODAL functions definitions 
+
+$("#locationModal").on("show.bs.modal", function(event){
+  var button = $(event.relatedTarget)
+  var source = button.data("btn-source")
+  var loc_id = button.data("loc_id")
+  var loc_name = button.data('loc_name')
+  var address = button.data('loc_address')
+  var city = button.data('loc_city')
+  var region = button.data('loc_region')
+  var post_code = button.data('loc_post_code')
+  var country = button.data('loc_country')
+
+  var modal = $(this)
+  modal.find('.form-group input#location_id').val(loc_id)
+  modal.find('.form-group input#location_name').val(loc_name)
+  modal.find('.form-group input#address').val(address)
+  modal.find('.form-group input#city').val(city)
+  modal.find('.form-group input#region').val(region)
+  modal.find('.form-group input#post_code').val(post_code)
+  modal.find('.form-group input#country').val(country)
+  console.log(source)
+  var nameEl = $("#location_name")
+  if (source == "add-btn") {
+    modal.find('.modal-title').text('Add new inventory location')
+    $('#location-submit').text('Add')
+    nameEl.prop('readonly', false);
+    setTimeout(function(){
+      $('#location_name').focus()
+    }, 1000)
+  } else {
+    modal.find('.modal-title').text('Update inventory location info')
+    $('#location-submit').text('Update')
+    nameEl.prop('readonly', true)
+    setTimeout(function(){
+      $('#address').focus()
+    }, 1000)
+  }
+  
+})
+
+$('#update-location-form').submit(function(event){
+  event.preventDefault()
+  var btnSource = $('#location-submit').text()
+
+  if (btnSource == 'Add'){
+    addnew_location()
+  } else {
+    update_location()
+  }
+})
+
+function addnew_location(){
+  //performs AJAX request to update the record in the database
+  
+  var loc_name = $('#location_name').val()
+  console.log(loc_name)
+  if (loc_name === '' || loc_name === undefined ){
+    showErrorNotification("Location name can't be blank.")
+    $('#location_name').focus()
+    return;
+  }
+
+  $.ajax({
+    url : "/products/location_add/",
+    type: "POST",
+    data: {
+      location_name: loc_name,
+      address: $('#address').val(),
+      city: $('#city').val(),
+      region:  $('#region').val(),
+      post_code: $('#post_code').val(),
+      country:  $('#country').val(),
+      csrfmiddlewaretoken: window.CSRF_TOKEN
+    },
+    success: function(response){
+      //console.log("location updated successfully");
+      showNotification("New location successfully added")
+      $("#jsGrid").jsGrid("refresh"); 
+      setTimeout(function(){
+        location.reload()
+      }, 2000)
+      
+    },
+    error: function(error){
+      //console.error("Error updating location", error);
+      showErrorNotification(error.responseText, "Error")
+    }
+  });
+}
+
+function update_location(){
+  //performs AJAX request to update the record in the database
+  var loc_id = $('#location_id').val()
+  var loc_name = $('#location_name').val()
+
+  if (loc_name === '' || loc_name === undefined ){
+    showErrorNotification("Location name can't be blank.")
+    return;
+  }
+
+  $.ajax({
+    url : "/products/location_update/",
+    type: "POST",
+    data: {
+      location_id: loc_id,
+      location_name: loc_name,
+      address: $('#address').val(),
+      city:  $('#city').val(),
+      region:  $('#region').val(),
+      post_code: $('#post_code').val(),
+      country: $('#country').val(),
+      csrfmiddlewaretoken: window.CSRF_TOKEN
+    },
+    success: function(response){
+      //console.log("location updated successfully");
+      showNotification("Location updated successfully")
+      $("#jsGrid").jsGrid("refresh"); 
+      setTimeout(function(){
+        location.reload()
+      }, 2000)
+    },
+    error: function(error){
+      //console.error("Error updating location", error);
+      showErrorNotification(error.responseText, "Error")
+    }
+  });
+}
+</script>
+
+{% endblock page_js %}
+
+
+
+
+
+
+
+
+
+       
